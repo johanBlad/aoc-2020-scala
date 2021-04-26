@@ -12,8 +12,8 @@ object Util {
   def readFile(resourcePath: String): Iterator[String] =
     Source.fromResource(resourcePath).getLines
 
-  def readInputInt(input: Int): List[Int] = {
+  def readInputInt(input: Int): Vector[Int] = {
     val fileInput: Iterator[String] = readFile(s"$input.in")
-    fileInput.map(e => e.toIntOption).toList.flatten
+    fileInput.map(e => e.toIntOption).toVector.flatten
   }
 }
