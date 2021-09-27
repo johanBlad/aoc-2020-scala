@@ -12,9 +12,8 @@ object Day1 {
     benchmark(naive, "naive", input, target)
     benchmark(recursive, "recursive", input, target)
     benchmark(stream, "stream", input, target)
-
-
-
+    benchmark(triplet_map, "triplet_map", input, target)
+    benchmark(triplet_recursive, "triplet_recursive", input, target)
   }
 
   def benchmark(callable: (Vector[Int], Int) => Int, name: String,  input: Vector[Int], target: Int): Double = {
@@ -31,41 +30,52 @@ object Day1 {
     ).flatten.distinct.map(pair => input(pair(0)) * input(pair(1)))(0)
   }
 
-  def loop(input: Vector[Int]): Int = {
-    11
-  }
+  def stream(input: Vector[Int], target: Int): Int = {
 
-  def stream(input: Vector[Int], target: Int): Option[Int] = {
-    def stream: LazyList[Vector[Int]] = LazyList.iterate(input){
+    def stream: LazyList[Vector[Int]] = LazyList.iterate(input.sorted){
       l => if (l.head + l.last > target) l.init else l.tail
     }
 
     stream.take(input.size - 1)
       .map(l => (l.head,  l.last))
       .find {case (x, y) => x + y == target}
-      .map{x => x._1 * x._2}
-      .getOrElse({ return None})
+      .map{x => x._1 * x._2}.getOrElse(0)
+  }
+
+  def findPair(a: Vector[Int], b: Vector[Int], target: Int): Tuple2[Option[Int], Option[Int]] = {
+    if (b.length == 0) Tuple2(None, None)
+    else if (a.head >= b.last) Tuple2(None, None)
+    else if (a.head + b.last == target) Tuple2(Some(a.head), Some(b.last))
+    else if (a.head + b.last < target) findPair(a.tail, b, target)
+    else findPair(a, b.init, target)
   }
 
   def recursive(input: Vector[Int], target: Int): Int = {
-    // tail, last, init, head
     val sorted: Vector[Int] = input.sorted
-    def findPair(a: Vector[Int], b: Vector[Int], target: Int): Int = {
-      if (a.head >= b.last) 0
-      else if (a.head + b.last == target) a.head * b.last
-      else if (a.head + b.last < target) findPair(a.tail, b, target)
-      else findPair(a, b.init, target)
-    }
-    findPair(sorted, sorted.tail, target)
+    val (a: Option[Int], b: Option[Int]) = findPair(sorted, sorted.tail, target)
+    a.getOrElse(0) * b.getOrElse(0)
   }
 
-  def bst(input: Vector[Int]): Option[Int] = {
-    val x = 5
+  def findTriplet(vec: Vector[Int], target: Int) : (Option[Int], Option[Int], Option[Int]) = {
+    if (vec.length == 0) return Tuple3(None, None, None)
+    val (a, b) = findPair(vec, vec.tail, target - vec.head)
+    if (a.getOrElse(0) + b.getOrElse(0) + vec.head > target) Tuple3(None, None, None)
+    else if (a.getOrElse(0) + b.getOrElse(0) + vec.head == target) Tuple3(a, b, Some(vec.head))
+    else findTriplet(vec.tail, target)
+  }
 
-    try {
-      Some(x + 1)
-    } catch {
-      case e => None
-    }
+  def triplet_recursive(input: Vector[Int], target: Int): Int = {
+    val sorted: Vector[Int] = input.sorted
+    val triplet = findTriplet(sorted, target)
+    triplet._1.getOrElse(0) * triplet._2.getOrElse(0) * triplet._3.getOrElse(0)
+  }
+
+  def triplet_map(input: Vector[Int], target: Int): Int = {
+    val sorted: Vector[Int] = input.sorted
+    sorted.map(e => {
+      val (a: Option[Int], b: Option[Int]) = findPair(sorted, sorted.tail, target - e)
+      a.getOrElse(0) * b.getOrElse(0) * e
+    }).find(_ != 0).getOrElse(0)
+
   }
 }
